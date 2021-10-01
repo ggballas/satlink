@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "@openzeppelin/contracts": "^2.5.1",
+    "ethereum-bridge": "^0.6.2",
+    "provable-eth-api": "^0.5.0-npmfix"
+  },
+  "scripts": {
+    "bridge": "./node_modules/.bin/ethereum-bridge -a 9 -H 127.0.0.1 -p 9545 --dev"
+  }
+}
