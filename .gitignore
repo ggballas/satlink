@@ -1,2 +1,6 @@
 build
-node_modules
+client/build
+client/coverage
+secrets.json
+
+**/node_modules

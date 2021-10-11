@@ -12,11 +12,11 @@ contract SatLink is Ownable, usingProvable {
     // Twitter
     string public twitterHandle = '';
     bool public twitterConnected = false;
-    bool public twitterLinkRequested = false;
+    bool public twitterOtpGenerated = false;
     uint public twitterOtp = 0;
     bytes32 private twitterOracleQueryId;
 
-    event twitterOtpGenerated(string handle, uint otp);
+    event twitter_otp_generated(string handle, uint otp);
     event twitter_link_success(string handle);
     event twitter_link_failure(string handle);
     event twitter_unlinked(string handle);
@@ -28,8 +28,8 @@ contract SatLink is Ownable, usingProvable {
     function generateTwitterOtp(string memory handle) public onlyOwner returns(uint) {
         twitterOtp = rand();
         twitterHandle = handle;
-        emit twitterOtpGenerated(handle, twitterOtp);
-        twitterLinkRequested = true;
+        emit twitter_otp_generated(handle, twitterOtp);
+        twitterOtpGenerated = true;
         return twitterOtp;
     }
 
@@ -37,7 +37,7 @@ contract SatLink is Ownable, usingProvable {
      * Send request to oracle to get the Tweet containing the OTP
      */
     function queryTwitterConnection() public payable onlyOwner {
-        require(twitterLinkRequested, "You must generate an OTP first!");
+        require(twitterOtpGenerated, "You must generate an OTP first!");
         require(provable_getPrice("computation") <= address(this).balance, "Please add some ETH to cover oracle query fee.");
         twitterOracleQueryId = provable_query(
             "computation",
@@ -66,7 +66,7 @@ contract SatLink is Ownable, usingProvable {
      */
     function unlinkTwitter() public onlyOwner {
         twitterConnected = false;
-        twitterLinkRequested = false;
+        twitterOtpGenerated = false;
         emit twitter_unlinked(twitterHandle);
     }
 
