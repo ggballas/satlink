@@ -8,8 +8,10 @@ contract SatLink is Ownable, usingProvable {
     // Constants
     string IPFS_ADDRESS_TWITTER_BIO_VERIFIER = 'QmdTjf18eWHmHVpSZ4fvZXd2KEHhL9By5xSVWa4iuyNKai';
     string IPFS_ADDRESS_IPFS_HASH_VERIFIER = 'QmZhncMhYz5bu5MnV1zSCLTzUqXkisbErwZDUpnam41mPL';
+    string IPFS_ADDRESS_PGP_SIG_VERIFIER = 'Qmf7zSDK2yYwg7mcP1WQTxxwVgbNikeRJ79qfd5nVCaKym';
     string TWITTER_BIO_VERIFICATION_SUCCESS = '1';
     string IPFS_HASH_VERIFICATION_SUCCESS = '1';
+    string PGP_SIG_VERIFICATION_SUCCESS = '1';
 
     // Enum of callback funcs
     // The first enum value is the default value, therefore we'll use it for "undefined"
@@ -17,16 +19,17 @@ contract SatLink is Ownable, usingProvable {
         undefined,
         queryTwitterConnection,
         assertIpfsNonexistent,
-        verifyIpfs
+        verifyIpfs,
+        provePgpKeyOwnership
     }
 
     mapping (bytes32 => provableCallbackFunc) private provableCallbackFuncs;
 
     // Twitter vars
     string public twitterHandle = '';
-    bool public twitterConnected = false;
     bool public twitterOtpGenerated = false;
     uint public twitterOtp = 0;
+    bool public twitterConnected = false;
 
     // IPFS vars
     string public ipfsCid = '';
@@ -35,6 +38,12 @@ contract SatLink is Ownable, usingProvable {
     string public ipfsSaltedHash = '';
     bool public ipfsSaltedHashUploaded = false;
     bool public ipfsConnected = false;
+
+    // PGP vars
+    string public pgpPubkeyIpfs = '';
+    bool public pgpOtpGenerated = false;
+    uint public pgpOtp = 0;
+    bool public pgpConnected = false;
 
     // Twitter events
     event twitter_otp_generated(string handle, uint otp);
@@ -48,6 +57,11 @@ contract SatLink is Ownable, usingProvable {
     event ipfs_salted_hash_uploaded(string cid, string salted_hash);
     event ipfs_link_success(string cid);
     event ipfs_link_failure(string cid);
+
+    // PGP events
+    event pgp_otp_generated(uint otp, string pubkey_ipfs);
+    event pgp_link_success(string pubkey_ipfs);
+    event pgp_link_failure(string pubkey_ipfs);
 
     event provable_callback(bytes32 _id, string _result, bytes _proof);
 
@@ -170,6 +184,49 @@ contract SatLink is Ownable, usingProvable {
             emit ipfs_link_success(ipfsCid);
         } else {
             emit ipfs_link_failure(ipfsCid);
+        }
+    }
+
+    // PGP funcs
+    /**
+     * 
+     */
+    function generatePgpOtp(string memory pubkeyIpfs) public onlyOwner returns(uint) {
+        // pgpOtp = rand();
+        pgpOtp = 123;
+        pgpPubkeyIpfs = pubkeyIpfs;
+        emit pgp_otp_generated(pgpOtp, pubkeyIpfs);
+        pgpOtpGenerated = true;
+        return pgpOtp;
+    }
+
+    /**
+     * Prove that you're the owner of the PGP pubkey by providing a signature of the OTP with that pubkey.
+     */
+    function provePgpKeyOwnership(string memory signatureIpfs) public payable onlyOwner {
+        require(pgpOtpGenerated, "You must generate an OTP first!");
+        require(provable_getPrice("computation") <= address(this).balance, "Please add some ETH to cover oracle query fee.");
+        bytes32 queryId = provable_query(
+            "computation",
+            [
+                IPFS_ADDRESS_PGP_SIG_VERIFIER,
+                uint2str(pgpOtp),
+                pgpPubkeyIpfs,
+                signatureIpfs
+            ]
+        );
+        provableCallbackFuncs[queryId] = provableCallbackFunc.provePgpKeyOwnership;
+    }
+
+    /**
+     * 
+     */
+    function provePgpKeyOwnershipCallback(string memory _result) public {
+        if (compareStrings(_result, PGP_SIG_VERIFICATION_SUCCESS)) {
+            pgpConnected = true;
+            emit pgp_link_success(pgpPubkeyIpfs);
+        } else {
+            emit pgp_link_failure(pgpPubkeyIpfs);
         }
     }
 
