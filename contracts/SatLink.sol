@@ -252,6 +252,9 @@ contract SatLink is Ownable, usingProvable {
         } else if (provableCallbackFuncs[_id] == provableCallbackFunc.verifyIpfs) {
             delete(provableCallbackFuncs[_id]);
             return verifyIpfsCallback(_result);
+        } else if (provableCallbackFuncs[_id] == provableCallbackFunc.provePgpKeyOwnership) {
+            delete(provableCallbackFuncs[_id]);
+            return provePgpKeyOwnershipCallback(_result);
         }
     }
 
