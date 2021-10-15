@@ -44,9 +44,10 @@ Now that our local blockchain and bridge are up and running, and the smart contr
 truffle console
 ```
 
+Run all of the commands below in the truffle console.
+
 ### Get address of your account and create SatLink for it
 ```
-// In truffle console (#3)
 accounts = await web3.eth.getAccounts()
 acc0 = accounts[0]
 
